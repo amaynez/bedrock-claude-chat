@@ -41,9 +41,17 @@ class TestEmbed(unittest.TestCase):
         self.assertNotEqual(len(splitted), 0)
 
     def test_partition_offline_no_spacy_download(self):
-        narrative = (
-            "This is a complete narrative sentence for offline partitioning. "
-            "It verifies that multiple sentences parse without network access."
+        html_text = (
+            "This is an HTML narrative sentence for offline partitioning. "
+            "It verifies HTML parsing works without network access."
+        )
+        txt_text = (
+            "This is a plain text narrative sentence for offline partitioning. "
+            "It verifies TXT parsing works without network access."
+        )
+        md_text = (
+            "This is a markdown narrative sentence for offline partitioning. "
+            "It verifies Markdown parsing works without network access."
         )
         tokenize._get_nlp.cache_clear()
         with patch(
@@ -51,22 +59,20 @@ class TestEmbed(unittest.TestCase):
             side_effect=AssertionError("Unexpected runtime spaCy model download"),
         ):
             html_elements = partition_html(
-                text=f"<html><body><p>{narrative}</p></body></html>"
+                text=f"<html><body><p>{html_text}</p></body></html>"
             )
-            self.assertIn("offline partitioning", "\n".join(map(str, html_elements)))
+            self.assertIn("HTML narrative", "\n".join(map(str, html_elements)))
 
             with tempfile.TemporaryDirectory() as tmpdir:
-                for name, content in (
-                    ("sample.txt", narrative),
-                    ("sample.md", f"# Title\n\n{narrative}"),
+                for name, content, expected in (
+                    ("sample.txt", txt_text, "plain text narrative"),
+                    ("sample.md", f"# Title\n\n{md_text}", "markdown narrative"),
                 ):
                     path = os.path.join(tmpdir, name)
                     with open(path, "w") as f:
                         f.write(content)
                     file_elements = partition(filename=path)
-                    self.assertIn(
-                        "offline partitioning", "\n".join(map(str, file_elements))
-                    )
+                    self.assertIn(expected, "\n".join(map(str, file_elements)))
 
 
 if __name__ == "__main__":
