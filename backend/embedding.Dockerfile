@@ -38,7 +38,10 @@ RUN apt-get update && apt-get install -y \
 
 WORKDIR /src
 COPY ./embedding.requirements.txt ./requirements.txt
-RUN pip3 install -r requirements.txt --no-cache-dir
+# Pre-install CPU-only PyTorch so ECS Fargate (CPU-only, 20 GiB ephemeral disk) avoids ~10 GB CUDA wheels
+RUN pip3 install --no-cache-dir --index-url https://download.pytorch.org/whl/cpu \
+    torch==2.15.0+cpu torchvision==0.29.2+cpu \
+    && pip3 install -r requirements.txt --no-cache-dir
 
 RUN playwright install
 
